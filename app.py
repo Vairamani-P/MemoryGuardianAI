@@ -162,26 +162,48 @@ if st.button("Who is this?"):
             st.error("Person not found")
             
             ##MEDICINE REMINDER
-            
-        st.header("Medicine Reminder")
+            st.header("Medicine Reminder")
 
-        medicine_time = st.time_input("Medicine Time")
+medicine_name = st.text_input("Medicine Name")
 
-        if st.button("Add Reminder"):
+medicine_time = st.time_input("Medicine Time")
 
-              st.success(
-                f"Reminder Added: {medicine_name} at {medicine_time}"
-             )
+if st.button("Add Reminder"):
 
-              current_time = datetime.datetime.now().strftime("%H:%M")
+    new_reminder = pd.DataFrame({
+        "Medicine": [medicine_name],
+        "Time": [str(medicine_time)]
+    })
 
-              reminder_time = medicine_time.strftime("%H:%M")
+    if os.path.exists("medicine_reminders.csv"):
 
-              if current_time == reminder_time:
+        old_reminders = pd.read_csv(
+            "medicine_reminders.csv"
+        )
 
-                 message = f"Time to take {medicine_name}"
+        reminders = pd.concat(
+            [old_reminders, new_reminder],
+            ignore_index=True
+        )
 
-                 st.warning(message)
+    else:
 
-                 speak(message)
-       
+        reminders = new_reminder
+
+    reminders.to_csv(
+        "medicine_reminders.csv",
+        index=False
+    )
+
+    st.success(
+        "Medicine Reminder Added Successfully"
+    )
+    if os.path.exists("medicine_reminders.csv"):
+
+     st.subheader("Saved Medicine Reminders")
+
+     reminder_data = pd.read_csv(
+        "medicine_reminders.csv"
+     )
+
+     st.dataframe(reminder_data)
