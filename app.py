@@ -4,6 +4,20 @@ import os
 import pyttsx3
 import datetime
 import time
+import datetime
+import base64
+def play_sound():
+    with open("alarm.mp3", "rb") as f:
+        data = f.read()
+        b64 = base64.b64encode(data).decode()
+
+    audio_html = f"""
+        <audio autoplay>
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+        </audio>
+    """
+    st.markdown(audio_html, unsafe_allow_html=True)
+from streamlit_autorefresh import st_autorefresh
 
 from medicine_name import medicine_name
 
@@ -162,12 +176,25 @@ if st.button("Who is this?"):
             st.error("Person not found")
             
             ##MEDICINE REMINDER
-            st.header("Medicine Reminder")
+         
+        st.header("Medicine Reminder")
 
 medicine_name = st.text_input("Medicine Name")
-
 medicine_time = st.time_input("Medicine Time")
 
+def speak(text):
+    import pyttsx3
+    engine = pyttsx3.init()
+
+    engine.setProperty('rate', 150)
+    engine.setProperty('volume', 1.0)
+
+    engine.say(text)
+    engine.runAndWait()
+    engine.stop()
+# -------------------------
+# ADD REMINDER
+# -------------------------
 if st.button("Add Reminder"):
 
     new_reminder = pd.DataFrame({
@@ -176,34 +203,50 @@ if st.button("Add Reminder"):
     })
 
     if os.path.exists("medicine_reminders.csv"):
-
-        old_reminders = pd.read_csv(
-            "medicine_reminders.csv"
-        )
-
-        reminders = pd.concat(
-            [old_reminders, new_reminder],
-            ignore_index=True
-        )
-
+        old = pd.read_csv("medicine_reminders.csv")
+        reminders = pd.concat([old, new_reminder], ignore_index=True)
     else:
-
         reminders = new_reminder
 
-    reminders.to_csv(
-        "medicine_reminders.csv",
-        index=False
-    )
+    reminders.to_csv("medicine_reminders.csv", index=False)
 
-    st.success(
-        "Medicine Reminder Added Successfully"
-    )
-    if os.path.exists("medicine_reminders.csv"):
+    st.success("Medicine Reminder Added Successfully")
 
-     st.subheader("Saved Medicine Reminders")
 
-     reminder_data = pd.read_csv(
-        "medicine_reminders.csv"
-     )
+# -------------------------
+# SESSION STATE
+# -------------------------
+if "spoken" not in st.session_state:
+    st.session_state.spoken = {}
 
-     st.dataframe(reminder_data)
+
+# -------------------------
+# SHOW + CHECK
+# -------------------------
+st.subheader("Active Reminders")
+
+if os.path.exists("medicine_reminders.csv"):
+
+    reminder_data = pd.read_csv("medicine_reminders.csv")
+    st.dataframe(reminder_data)
+
+    current_time = datetime.datetime.now().strftime("%H:%M")
+
+    for _, row in reminder_data.iterrows():
+
+        reminder_time = str(row["Time"])[:5]
+
+        if reminder_time == current_time:
+
+            message = f"Time to take {row['Medicine']}"
+
+            key = f"{row['Medicine']}_{reminder_time}"
+
+            if not st.session_state.spoken.get(key, False):
+
+                st.warning(message)
+                play_sound()
+                speak(message)
+
+                st.session_state.spoken[key] = True
+                st_autorefresh(interval=5000, key="reminder_refresh")
