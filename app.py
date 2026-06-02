@@ -6,17 +6,41 @@ import datetime
 import time
 import datetime
 import base64
-def play_sound():
+import base64
+def speak(text):
+    import pyttsx3
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
+
+def play_sos_alarm():
     with open("alarm.mp3", "rb") as f:
         data = f.read()
         b64 = base64.b64encode(data).decode()
 
     audio_html = f"""
-        <audio autoplay>
+        <audio autoplay loop>
             <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
         </audio>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
+def play_sos_alarm():
+    file_path = os.path.join(os.getcwd(), "alarm.mp3")
+
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+
+        b64 = base64.b64encode(data).decode()
+
+        st.markdown(f"""
+            <audio autoplay loop>
+                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+        """, unsafe_allow_html=True)
+
+    except Exception:
+        st.error("⚠️ alarm.mp3 file not accessible")
 from streamlit_autorefresh import st_autorefresh
 
 from medicine_name import medicine_name
@@ -49,7 +73,7 @@ photo = st.file_uploader(
 if photo:
     st.image(photo, width=200)
 
-if st.button("Save"):
+if st.button("Save",key="save_btn"):
 
     if not name.strip():
         st.error("Please enter a name")
@@ -179,9 +203,15 @@ if st.button("Who is this?"):
          
         st.header("Medicine Reminder")
 
-medicine_name = st.text_input("Medicine Name")
-medicine_time = st.time_input("Medicine Time")
+medicine_name = st.text_input(
+    "Medicine Name",
+    key="medicine_name"
+)
 
+medicine_time = st.time_input(
+    "Medicine Time",
+    key="medicine_time"
+)
 def speak(text):
     import pyttsx3
     engine = pyttsx3.init()
@@ -195,7 +225,7 @@ def speak(text):
 # -------------------------
 # ADD REMINDER
 # -------------------------
-if st.button("Add Reminder"):
+if st.button("Add Reminder", key="add_reminder"):
 
     new_reminder = pd.DataFrame({
         "Medicine": [medicine_name],
@@ -248,5 +278,20 @@ if os.path.exists("medicine_reminders.csv"):
                 play_sound()
                 speak(message)
 
-                st.session_state.spoken[key] = True
-                st_autorefresh(interval=5000, key="reminder_refresh")
+
+
+if st.button("🔥 ACTIVATE SOS ALARM", key="sos_alarm"):
+
+    st.error("🚨 EMERGENCY ALERT ACTIVATED!")
+    st.warning("Sending emergency signal...")
+
+    play_sos_alarm()
+
+    speak("Emergency alert activated. Help needed, Anyone Come fast")  # 👈 HERE
+
+    st.markdown(
+        "<h1 style='color:red;text-align:center;'>HELP NEEDED !!!</h1>",
+        unsafe_allow_html=True
+    )
+
+    st.toast("🚨 SOS ALERT SENT!")
