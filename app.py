@@ -6,7 +6,7 @@ import datetime
 import time
 import datetime
 import base64
-import base64
+
 def speak(text):
     import pyttsx3
     engine = pyttsx3.init()
@@ -51,6 +51,14 @@ def speak(text):
     engine.runAndWait()
 
 st.title("Memory Guardian AI")
+if os.path.exists("patient_data.csv"):
+    patient = pd.read_csv("patient_data.csv")
+
+    st.subheader("Patient Summary")
+
+    st.write("👤", patient.iloc[0]["Name"])
+    st.write("🩸", patient.iloc[0]["Blood Group"])
+    st.write("🏥", patient.iloc[0]["Condition"])
 
 # ----------------------------
 # FAMILY MEMBER REGISTRATION
@@ -198,6 +206,46 @@ if st.button("Who is this?"):
         else:
 
             st.error("Person not found")
+        st.header("Patient Information")
+
+        patient_name = st.text_input("Patient Name")
+
+        patient_age = st.number_input(
+            "Age",
+            min_value=1,
+            max_value=120
+)
+
+        blood_group = st.selectbox(
+          "Blood Group",
+          ["A+","A-","B+","B-","AB+","AB-","O+","O-"]
+)
+
+        medical_condition = st.text_input(
+             "Medical Condition"
+)
+
+        emergency_contact = st.text_input(
+            "Emergency Contact Number"
+)           
+        if st.button("Save Patient Details"):
+
+           patient_data = pd.DataFrame({
+               "Name":[patient_name],
+                "Age":[patient_age],
+                "Blood Group":[blood_group],
+                "Condition":[medical_condition],
+                "Contact":[emergency_contact]
+    })
+
+           patient_data.to_csv(
+              "patient_data.csv",
+               index=False
+    )
+
+           st.success(
+              "Patient Details Saved Successfully"
+    )
             
             ##MEDICINE REMINDER
          
@@ -275,8 +323,64 @@ if os.path.exists("medicine_reminders.csv"):
             if not st.session_state.spoken.get(key, False):
 
                 st.warning(message)
-                play_sound()
+                
                 speak(message)
+                
+                
+                # ----------------------------
+# PATIENT INFORMATION
+# ----------------------------
+
+st.header("Patient Information")
+
+patient_name = st.text_input(
+    "Patient Name",
+    key="patient_name"
+)
+
+patient_age = st.number_input(
+    "Age",
+    min_value=1,
+    max_value=120,
+    key="patient_age"
+)
+
+blood_group = st.selectbox(
+    "Blood Group",
+    ["A+","A-","B+","B-","AB+","AB-","O+","O-"],
+    key="blood_group"
+)
+
+medical_condition = st.text_input(
+    "Medical Condition",
+    key="medical_condition"
+)
+
+emergency_contact = st.text_input(
+    "Emergency Contact Number",
+    key="emergency_contact"
+)
+patient_location = st.text_input(
+    "Patient Location",
+    key="patient_location"
+)
+
+if st.button("Save Patient Details", key="save_patient"):
+
+    patient_data = pd.DataFrame({
+    "Name":[patient_name],
+    "Age":[patient_age],
+    "Blood Group":[blood_group],
+    "Condition":[medical_condition],
+    "Contact":[emergency_contact],
+    "Location":[patient_location]
+})
+    patient_data.to_csv(
+        "patient_data.csv",
+        index=False
+    )
+
+    st.success("Patient Details Saved Successfully")
 
 
 
@@ -284,14 +388,27 @@ if st.button("🔥 ACTIVATE SOS ALARM", key="sos_alarm"):
 
     st.error("🚨 EMERGENCY ALERT ACTIVATED!")
     st.warning("Sending emergency signal...")
+    st.warning("🔊 SOS Alarm Activated")
 
-    play_sos_alarm()
+    speak("Emergency alert activated. Help needed, Anyone Come fast")
 
-    speak("Emergency alert activated. Help needed, Anyone Come fast")  # 👈 HERE
+    st.success("📧 Emergency Notification Sent")
 
     st.markdown(
         "<h1 style='color:red;text-align:center;'>HELP NEEDED !!!</h1>",
         unsafe_allow_html=True
     )
+    if os.path.exists("patient_data.csv"):
+
+       patient = pd.read_csv("patient_data.csv")
+
+    st.subheader("Patient Emergency Information")
+
+    st.write("👤 Name:", patient.iloc[0]["Name"])
+    st.write("🎂 Age:", patient.iloc[0]["Age"])
+    st.write("🩸 Blood Group:", patient.iloc[0]["Blood Group"])
+    st.write("🏥 Condition:", patient.iloc[0]["Condition"])
+    st.write("📞 Contact:", patient.iloc[0]["Contact"])
+    st.success("📧 Email Alert Sent To Family")
 
     st.toast("🚨 SOS ALERT SENT!")
